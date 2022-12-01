@@ -26,3 +26,12 @@ for k = 1 to 3
    ar[maxi] = 0
 
 print(sum)
+
+// second part
+
+with open("C:/Users/elian/pythonProject4/venv/Scripts/data.txt", "r") as f:
+    data = [row.strip() for row in f.readlines()]
+
+calories = [sum(map(int, row.split(" "))) for row in " ".join(data).split("  ")]
+print(max(calories))
+print(sum(sorted(calories, reverse=True)[:3]))
