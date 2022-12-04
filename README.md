@@ -1,4 +1,4 @@
-# Advent_code_2022
+# 🎄🎄🎄 Advent Of code 2022 🎄🎄🎄
 every day a different problem
 
 ## 🎄🎄🎄 IT'S THE MODT WONDERFUL TIME OF THE YEARRR 🎄🎄🎄
