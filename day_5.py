@@ -1,110 +1,86 @@
-import string
-
 with open("input.txt", "r") as f:
 	input = f.read()
 
-def removeWhitespace(string):
-    ns = ""
-    for i in string:
-            if not i.isspace():
-                    ns += i
-    return ns
 
-def parseInstruction(instruction):
-	if type(instruction) == list:
-		result = []
-		for i in instruction:
-			result.append(i.strip("move ").replace("from ", "").replace("to ", "").split(" "))
-		return result
-	elif type(instruction) == str:
-		return instruction.strip("move ").replace("from ", "").replace("to ", "").split(" ")
+# A ogni colonna far corrispondere il numero di quella colonna. Associamo a una chiave numerica un valore stringa
+# Dall'input prendere la lista di chiavi
+lookup = '1'
+lineWithKeysIndex = 0
 
-def doInstruction(instruction, part = 0):
-	global topCrates
-	global crates
-	amount, from_, to = int(instruction[0]), int(instruction[1]) - 1, int(instruction[2]) - 1
-	
-	if topCrates[to] - amount < 0:
-		for i in range(amount):
-			crates = [[" " for i in range(len(crates[0]))]] + crates
-		topCrates = getTopCrates(crates)
+with open("input.txt") as f:
+	for num, line in enumerate(f, 1):
+		if lookup in line:
+			lineWithKeysIndex = num
+			break
 
-	if part == 0:
-		for i in range(amount):
-			crates[topCrates[to] - 1][to] = crates[topCrates[from_]][from_]
-			crates[topCrates[from_]][from_] = " "
-			topCrates = getTopCrates(crates)
+input = input.splitlines()
+highestKey = max(input[lineWithKeysIndex-1].split(' '))
+crates = dict.fromkeys(range(1, int(highestKey) + 1))
+
+# Associare colonna di valori a chiavi
+#esempio:
+# x = 1 -> return 2
+# x = 2 -> return 6 => 2*3
+# x = 3 -> return 10 => 3*3 + 1
+# x = 4 -> return 14 => 4*3 + 2
+# x = 5 -> return 18 => 5*3 + 3
+
+# x = x*3 + (x-2)
+
+def getCrateColumn(dictKey):
+	if dictKey == 1:
+		return 2
 	else:
-		for i in list(reversed(range(amount))):
-			crates[topCrates[to] - 1][to] = crates[topCrates[from_] + i][from_]
-			crates[topCrates[from_] + i][from_] = " "
-			topCrates = getTopCrates(crates)		
-		
+		return dictKey*3+(dictKey-2)
 
-def parseCrates(crates):
-	columnsStr = crates[-1]
-	columns = int(removeWhitespace(columnsStr)[-1])
-	crates.pop(-1)
-	rows = len(crates)
-	result = [[" " for i in range(columns)] for i in range(rows)]
+for key in crates:
+	# Inizializziamo valore dizionario
+	crates[key] = []
+	# Iterare tutte le righe delle casse
+	for index, line in enumerate(input, start=1):
+		if index < lineWithKeysIndex:
+			# per ogni riga se c'e' una cassa aggiungere la lettera al dizionario, se non c'e' una cassa mettiamo %
+			crateIndex = getCrateColumn(key)
+			if line[crateIndex-1] != ' ':
+				crates[key].append(line[crateIndex-1])
+	crates[key].reverse()
 
-	for row, layer in enumerate(crates):
-		for column, char in enumerate(layer):
-			if char in letters:
-				column = int(columnsStr[column]) - 1 
-				result[row][column] = char
+commandList = input[lineWithKeysIndex+1:]
 
-	return result
+for index, line in enumerate(commandList):
+	commandList[index] = [int(s) for s in line.split() if s.isdigit()]
 
-def getTopCrates(crates, letters = False):
-	highestPoints = {}
-	for row, layer in enumerate(crates):
-		for column, crate in enumerate(layer):
-			if crate != " " and highestPoints.get(column, None) == None:
-				if letters:
-					highestPoints[column] = crate
-				else:
-					highestPoints[column] = row
+# Commandlist
+# primo numero = quante casse devo spostare
+# secondo numero = chiave di partenza
+# terzo numero = chiave di arrivo
+def executeCommandCrateMover9000(cratesNumber, fromKey, toKey):
+	for i in range(cratesNumber):
+		moving = crates[fromKey].pop()
+		crates[toKey].append(moving)
 
-	for row, layer in enumerate(crates):
-		for column, crate in enumerate(layer):
-			if highestPoints.get(column, None) == None:
-				if letters:
-					highestPoints[column] = None
-				else:
-					highestPoints[column] = len(crates)
-	return highestPoints
-
-
-letters = string.ascii_letters
-
-crates = input.split("\n\n")[0].split("\n")
-instructions = input.split("\n\n")[1].split("\n")
-
-crates = parseCrates(crates)
-topCrates = getTopCrates(crates)
-
-for instruction in instructions:
-	doInstruction(parseInstruction(instruction))
-
-finalTop0 = getTopCrates(crates, True)
-result0 = ""
-for i in range(len(crates[0])):
-	result0 += finalTop0[i]
-
-crates = input.split("\n\n")[0].split("\n")
-instructions = input.split("\n\n")[1].split("\n")
-
-crates = parseCrates(crates)
-topCrates = getTopCrates(crates)
-
-for instruction in instructions:
-	doInstruction(parseInstruction(instruction), part = 1)
-
-finalTop1 = getTopCrates(crates, True)
-result1 = ""
-for i in range(len(crates[0])):
-	result1 += finalTop1[i]
+def executeCommandCrateMover9001(cratesToMove, fromKey, toKey):
+	# debug = False
+	# if cratesToMove == 1 and fromKey == 3 and toKey == 9:
+	# 	debug = True
+	# if debug:
+	# 	print("Executing command %s %s %s" % (cratesToMove, fromKey, toKey))
+	# 	print(crates)
+	moving = []
+	for i in range(cratesToMove):
+		moving.append(crates[fromKey].pop())
+	moving.reverse()
+	crates[toKey].extend(moving)
+	# if debug:
+	# 	print(crates)
 
 
-print(f"Answer 1: {result0}\nAnswer 2: {result1}")
+for command in commandList:
+	executeCommandCrateMover9001(command[0], command[1], command[2])
+
+for column in crates:
+	print(crates[column][-1])
+
+
+
+
