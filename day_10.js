@@ -198,3 +198,77 @@ function solve(part) {
 solve("part1");
 // RBPARAGF
 solve("part2");
+
+const path = require('path');
+const fs = require('fs');
+
+const input = fs
+	.readFileSync(path.join(__dirname, 'imput.txt'), 'utf8')
+	.toString()
+	.trim()
+	.split('\n')
+	.flatMap((v) => {
+		let [op, n] = v.split(' ');
+		if (op === 'addx') {
+			n = parseInt(n, 10);
+
+			if (Number.isNaN(n)) {
+				throw v;
+			}
+
+			/**
+			 * Simplify cycles logic by inserting `noop` instructions
+			 * before every `addx` call to account for fact that
+			 * `addx` takes two cycles. After this change, the number
+			 * of instructions now will equal the number of cycles.
+			 */
+			return [{ op: 'noop' }, { op: 'addx', n }];
+		} else {
+			return [{ op: 'noop' }];
+		}
+	});
+
+// The CPU has a single register, `X`, which starts with the value `1`.
+let register = 1;
+
+// Part one is calculating the signal strength. Store all of them and sum up specific ones later
+const signal_strengths = new Map();
+
+// Part two is our CRT: 40 pixels wide and 6 high.
+const frame = Array(6)
+	.fill()
+	.map(() => Array(40).fill(' '));
+
+for (let cycle = 1; cycle <= input.length; cycle++) {
+	const cycle_index = cycle - 1;
+	const { op, n } = input[cycle_index];
+
+	// Middle of instruction executing, store signal strength
+	signal_strengths.set(cycle, cycle * register);
+
+	// And then record our pixel
+	const frame_row = Math.floor(cycle_index / 40);
+	const position = cycle_index % 40;
+	// A sprite 3 pixels wide has 1 pixel on either side of the register
+	const in_sprite = position >= register - 1 && position <= register + 1;
+	// Use different chars to make reading the ASCII easier
+	const char = in_sprite ? '█' : ' ';
+	frame[frame_row][position] = char;
+
+	if (op === 'addx') {
+		register += n;
+	}
+}
+
+const sum =
+	signal_strengths.get(20) +
+	signal_strengths.get(60) +
+	signal_strengths.get(100) +
+	signal_strengths.get(140) +
+	signal_strengths.get(180) +
+	signal_strengths.get(220);
+
+const screen = frame.map((r) => r.join('')).join('\n');
+
+console.log('Part one:', sum);
+console.log(`Part two:\n${screen}`);
